@@ -23,7 +23,7 @@ H                       [a-f0-9]
 "any"                   return 'ANY';
 "all"                   return 'ALL';
 "tag"                   return 'TAG';
-"machine"               return 'MACHINE';
+[Vv][Mm]                return 'VM';
 
 '('                     return '(';
 ')'                     return ')';
@@ -70,7 +70,7 @@ target
     : ip
     | subnet
     | tag
-    | machine
+    | vm
     ;
 
 
@@ -101,9 +101,9 @@ subnet
             $$ = [ ['subnet', $2 + $3] ]; }
     ;
 
-machine
-    : MACHINE UUID
-        { $$ = [ ['machine', $2] ]; }
+vm
+    : VM UUID
+        { $$ = [ ['vm', $2] ]; }
     ;
 
 tag
