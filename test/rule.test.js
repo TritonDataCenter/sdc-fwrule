@@ -9,6 +9,12 @@ var util = require('util');
 
 
 
+// Set this to any of the exports in this file to only run that test,
+// plus setup and teardown
+var runOne;
+
+
+
 exports['all target types'] = function (t) {
   var ips = ['192.168.1.1', '10.2.0.3'];
   var vms = ['9a343ca8-b42a-4a27-a9c5-800f57d1e8ed',
@@ -146,49 +152,115 @@ exports['multiple ports and owner_uuid'] = function (t) {
 };
 
 
-/*jsl:ignore*/
 var INVALID = [
-  // Invalid IP
-  [ {
-      rule: 'FROM ip 10.99.99.99.254 TO tag smartdc_role ALLOW tcp port 22'
-    }, /Unrecognized text/],
-  // Invalid UUID
-  [ { uuid: 'invalid',
+  [ 'invalid IP: too many numbers',
+    {
+      rule: 'FROM ip 10.99.99.99.254 TO tag smartdc_role ALLOW tcp port 22' },
+      'rule', 'Error at character 19: \'.254 TO tag smartdc_\', '
+              + 'found: unexpected text'],
+
+  [ 'invalid UUID',
+    { uuid: 'invalid',
       rule: 'FROM tag foo TO ip 8.8.8.8 ALLOW udp port 53'
-      /* JSSTYLED */
-    }, /Invalid rule UUID "invalid"/ ],
-  // Invalid owner UUID
-  [ { owner_uuid: 'invalid',
+    }, 'uuid', 'Invalid rule UUID "invalid"' ],
+
+  [ 'invalid owner UUID',
+    { owner_uuid: 'invalid',
       rule: 'FROM tag foo TO ip 8.8.8.8 ALLOW udp port 53'
-      /* JSSTYLED */
-    }, /Invalid owner UUID "invalid"/ ],
-  // Non-target type in FROM
-  [ { rule: 'FROM foo TO ip 8.8.8.8 ALLOW udp port 53'
-    }, /Expecting/ ],
-  // Invalid subnet
-  [ { rule: 'FROM tag foo TO subnet 10.8.0.0/33 ALLOW udp port 53'
-      /* JSSTYLED */
-    }, /Subnet "10.8.0.0\/33" is invalid/ ]
+    }, 'owner_uuid', 'Invalid owner UUID "invalid"' ],
+
+  [ 'non-target type in FROM',
+    { rule: 'FROM foo TO ip 8.8.8.8 ALLOW udp port 53' },
+    'rule', 'Error at character 4: \'foo\', '
+            + 'expected: \'(\', \'all\', \'any\', \'ip\', '
+            + '\'subnet\', \'vm\', \'tag\', found: tag text'],
+
+  [ 'invalid subnet',
+    { rule: 'FROM tag foo TO subnet 10.8.0.0/33 ALLOW udp port 53' },
+    'rule', 'Subnet "10.8.0.0/33" is invalid (must be in CIDR format)' ],
+
+  [ 'invalid port',
+    { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW udp port 0' },
+    'rule', 'Invalid port number "0"' ]
 ];
-/*jsl:end*/
 
 
 exports['Invalid rules'] = function (t) {
   INVALID.forEach(function (data) {
-    var rule = data[0];
-    var expMsg = data[1];
-    t.throws(function () { fwrule.create(rule); }, expMsg,
-      'Error thrown: ' + expMsg);
+    var testName = data[0];
+    var expMsg = data[3];
+    var field = data[2];
+    var rule = data[1];
+    var thrown = false;
+
+    try {
+      fwrule.create(rule);
+    } catch (err) {
+      thrown = true;
+      t.equal(err.message, expMsg, 'Error message correct: ' + testName);
+      t.equal(err.field, field, 'Error field correct: ' + testName);
+    }
+
+    t.ok(thrown, 'Error thrown: ' + testName);
   });
 
   t.done();
 };
 
-/*
- * Need tests around versions:
- * - if one is supplied, when it overrides what's already on disk
- * - version updates when doing a fw.update()
- *
- * Can't add duplicate uuids
- * - or rules that are identical
- */
+exports['Invalid parameters'] = function (t) {
+  var thrown = false;
+  var invalid = {
+    enabled: 'invalid',
+    rule: 'invalid',
+    owner_uuid: 'invalid',
+    uuid: 'invalid'
+  };
+
+  try {
+    fwrule.create(invalid);
+  } catch (err) {
+    thrown = true;
+
+    t.ok(err.hasOwnProperty('ase_errors'), 'multiple errors');
+    if (err.hasOwnProperty('ase_errors')) {
+      t.equal(err.ase_errors.length, 4, '4 sub-errors');
+      t.deepEqual(err.ase_errors.map(function (e) {
+        return [ e.field, e.message ];
+      }), [
+        ['rule', 'Error at character 0: \'invalid\', '
+          + 'expected: \'FROM\', found: tag text'],
+        ['uuid', 'Invalid rule UUID "invalid"'],
+        ['owner_uuid', 'Invalid owner UUID "invalid"'],
+        ['enabled', 'enabled must be true or false']
+      ], 'sub-errors');
+    }
+  }
+
+  t.ok(thrown, 'error thrown');
+  t.done();
+};
+
+
+exports['Missing rule field'] = function (t) {
+  var thrown = false;
+
+  try {
+    fwrule.create({});
+  } catch (err) {
+    thrown = true;
+    t.equal(err.message, 'No rule specified!', 'error message');
+    t.equal(err.field, 'rule', 'err.field');
+  }
+
+  t.ok(thrown, 'error thrown');
+  t.done();
+};
+
+
+
+// Use to run only one test in this file:
+if (runOne) {
+  module.exports = {
+    oneTest: runOne
+  };
+}
