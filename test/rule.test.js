@@ -58,6 +58,113 @@ exports['all target types'] = function (t) {
   t.deepEqual(rule.raw(), raw, 'rule.raw()');
   t.deepEqual(rule.from, raw.from, 'rule.from');
   t.deepEqual(rule.to, raw.to, 'rule.to');
+  t.ok(!rule.allVMs, 'rule.allVMs');
+
+  t.done();
+};
+
+
+exports['any'] = function (t) {
+  var ip = '192.168.3.2';
+  var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
+  var tag = 'tag3';
+  var subnet = '192.168.0.0/16';
+
+  var ruleTxt = util.format(
+    'FROM (ip %s OR subnet %s OR tag %s OR vm %s) TO any ALLOW tcp PORT 80',
+    ip, subnet, tag, vm);
+
+  var rule = fwrule.create({
+    rule: ruleTxt,
+    enabled: true,
+    version: fwrule.generateVersion()
+  });
+
+  var raw = {
+    from: {
+      ips: [ip],
+      subnets: [subnet],
+      vms: [vm],
+      tags: [tag],
+      wildcards: []
+    },
+    to: {
+      ips: [],
+      subnets: [],
+      vms: [],
+      tags: [],
+      wildcards: ['any']
+    },
+    enabled: true,
+    ports: [ 80 ],
+    action: 'allow',
+    protocol: 'tcp',
+    uuid: rule.uuid,
+    version: rule.version
+  };
+
+  t.deepEqual(rule.raw(), raw, 'rule.raw()');
+  t.deepEqual(rule.from, raw.from, 'rule.from');
+  t.deepEqual(rule.to, raw.to, 'rule.to');
+  t.ok(!rule.allVMs, 'rule.allVMs');
+
+  t.deepEqual(rule.serialize(), {
+    enabled: true,
+    rule: ruleTxt,
+    uuid: rule.uuid,
+    version: rule.version
+  }, 'rule.serialize()');
+
+  t.done();
+};
+
+
+exports['all vms'] = function (t) {
+  var ip = '192.168.3.2';
+
+  var ruleTxt = util.format('FROM ip %s TO all vms ALLOW tcp PORT 80', ip);
+
+  var rule = fwrule.create({
+    rule: ruleTxt,
+    enabled: true,
+    version: fwrule.generateVersion()
+  });
+
+  var raw = {
+    from: {
+      ips: [ip],
+      subnets: [],
+      vms: [],
+      tags: [],
+      wildcards: []
+    },
+    to: {
+      ips: [],
+      subnets: [],
+      vms: [],
+      tags: [],
+      wildcards: ['vmall']
+    },
+    enabled: true,
+    ports: [ 80 ],
+    action: 'allow',
+    protocol: 'tcp',
+    uuid: rule.uuid,
+    version: rule.version
+  };
+
+  t.deepEqual(rule.raw(), raw, 'rule.raw()');
+  t.deepEqual(rule.from, raw.from, 'rule.from');
+  t.deepEqual(rule.to, raw.to, 'rule.to');
+  t.deepEqual(rule.wildcards, raw.to.wildcards, 'rule.wildcards');
+  t.ok(rule.allVMs, 'rule.allVMs');
+
+  t.deepEqual(rule.serialize(), {
+    enabled: true,
+    rule: ruleTxt,
+    uuid: rule.uuid,
+    version: rule.version
+  }, 'rule.serialize()');
 
   t.done();
 };
@@ -94,13 +201,13 @@ exports['tags'] = function (t) {
   };
   t.deepEqual(rule.raw(), raw, 'rule.raw()');
 
-  var serialized = rule.serialize();
-  t.deepEqual(serialized, {
+  t.deepEqual(rule.serialize(), {
     enabled: false,
     rule: ruleTxt,
     uuid: rule.uuid,
     version: rule.version
   }, 'rule.serialize()');
+  t.ok(!rule.allVMs, 'rule.allVMs');
 
   t.done();
 };
@@ -181,7 +288,28 @@ var INVALID = [
 
   [ 'invalid port',
     { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW udp port 0' },
-    'rule', 'Invalid port number "0"' ]
+    'rule', 'Invalid port number "0"' ],
+
+  [ 'invalid VM UUID',
+    { rule: 'FROM vm asdf TO subnet 10.8.0.0/24 ALLOW udp port 50' },
+    'rule', 'Error at character 7: \'asdf\', '
+            + 'expected: \'UUID\', found: tag text'],
+
+  [ 'all vms with other targets on FROM side',
+    { rule: 'FROM (all vms OR tag one) TO ip 10.0.0.1 ALLOW udp port 53' },
+    'rule', 'Error at character 13: \'OR\', expected: \')\', found: OR' ],
+
+  [ 'all vms with other targets on TO side',
+    { rule: 'FROM tag one TO (all vms OR tag two) ALLOW udp port 53' },
+    'rule', 'Error at character 24: \'OR\', expected: \')\', found: OR' ],
+
+  [ 'any with other targets on FROM side',
+    { rule: 'FROM (any OR tag one) TO ip 10.0.0.1 ALLOW udp port 53' },
+    'rule', 'Error at character 9: \'OR\', expected: \')\', found: OR' ],
+
+  [ 'any with other targets on TO side',
+    { rule: 'FROM ip 10.0.0.1 TO (any OR tag one) ALLOW udp port 53' },
+    'rule', 'Error at character 24: \'OR\', expected: \')\', found: OR' ]
 ];
 
 

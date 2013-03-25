@@ -23,7 +23,8 @@ H                       [a-f0-9]
 "any"                   return 'ANY';
 "all"                   return 'ALL';
 "tag"                   return 'TAG';
-[Vv][Mm]                return 'VM';
+"vm"                    return 'VM';
+"vms"                   return 'VMS';
 
 '('                     return '(';
 ')'                     return ')';
@@ -76,10 +77,10 @@ target
 
 /* Targets for 'FROM' and 'TO' */
 all
-    : ALL
-        { $$ = [ ['wildcard', $1] ]; }
-    | '(' ALL ')'
-        { $$ = [ ['wildcard', $2] ]; }
+    : ALL VMS
+        { $$ = [ ['wildcard', 'vmall'] ]; }
+    | '(' ALL VMS ')'
+        { $$ = [ ['wildcard', 'vmall'] ]; }
     ;
 
 any
