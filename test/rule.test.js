@@ -217,7 +217,7 @@ exports['multiple ports and owner_uuid'] = function (t) {
   var inRule = {
     rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp (PORT 1002 AND PORT 1052)',
     enabled: true,
-    owner_uuid: '00000000-0000-0000-0000-000000000000',
+    owner_uuid: '930896af-bf8c-48d4-885c-6573a94b1853',
     version: fwrule.generateVersion()
   };
 
