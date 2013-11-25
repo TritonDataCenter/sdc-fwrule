@@ -15,6 +15,20 @@ var runOne;
 
 
 
+// --- Tests
+
+
+
+exports['rule exports'] = function (t) {
+    ['ACTIONS', 'DIRECTIONS', 'FIELDS', 'PROTOCOLS', 'TARGET_TYPES'].forEach(
+        function (field) {
+        t.ok(fwrule[field].length > 0, 'fwrule.' + field);
+    });
+
+    t.done();
+};
+
+
 exports['all target types'] = function (t) {
     var desc = 'all target types';
     var ips = ['192.168.1.1', '10.2.0.3'];
@@ -66,7 +80,7 @@ exports['all target types'] = function (t) {
     t.deepEqual(rule.to, raw.to, 'rule.to');
     t.ok(!rule.allVMs, 'rule.allVMs');
 
-    t.deepEqual(rule.serialize(), {
+    var ser = {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
@@ -76,7 +90,12 @@ exports['all target types'] = function (t) {
             ips[1], subnets[1], tags[1], vms[1]),
         uuid: rule.uuid,
         version: rule.version
-    }, 'rule.serialize()');
+    };
+
+    t.deepEqual(rule.serialize(), ser, 'rule.serialize()');
+    t.deepEqual(rule.serialize(['enabled', 'version']),
+        { enabled: ser.enabled, version: ser.version },
+        'rule.serialize(): enabled, version');
 
     t.done();
 };
