@@ -70,6 +70,9 @@ test: $(NODEUNIT)
 check: check-jsl check-jsstyle
 	@echo check ok
 
+.PHONY: prepush
+prepush: check test
+
 #
 # This rule enables other rules that use files from a git submodule to have
 # those files depend on deps/module/.git and have "make" automatically check
