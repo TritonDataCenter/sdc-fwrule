@@ -243,3 +243,24 @@ Allows ssh traffic between all VMs.
 
 Allow HTTP traffic from any host to all VMs.
 
+
+# Error Messages
+
+This section explains error messages.
+
+## rule does not affect VMs
+
+The rule you're trying to create doesn't contain any targets that will
+actually cause rules to be applied to VMs.  Targets that will cause rules
+to be applied are:
+
+* tag
+* vm
+* all vms
+
+Some examples of rules that would cause this message include:
+
+    FROM any TO any ALLOW tcp port 22
+
+    FROM ip 192.168.1.3 TO subnet 192.168.1.0/24 ALLOW tcp port 22
+

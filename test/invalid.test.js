@@ -137,7 +137,27 @@ var INVALID = [
         description: longStr(),
         rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
         }, 'description',
-        'description must be shorter than 255 characters']
+        'description must be shorter than 255 characters'],
+
+    [ 'rule: from any to any', {
+        rule: 'FROM any TO any ALLOW TCP port 53'
+        }, 'rule',
+        'rule does not affect VMs'],
+
+    [ 'rule: from any to any', {
+        rule: 'FROM any TO any ALLOW TCP port 53'
+        }, 'rule',
+        'rule does not affect VMs'],
+
+    [ 'rule: from ip to subnet', {
+        rule: 'FROM ip 10.8.0.1 TO subnet 10.9.0.0/16 ALLOW TCP port 53'
+        }, 'rule',
+        'rule does not affect VMs'],
+
+    [ 'rule: from ip to any', {
+        rule: 'FROM ip 10.9.0.1 TO any ALLOW TCP port 53'
+        }, 'rule',
+        'rule does not affect VMs']
 ];
 
 
