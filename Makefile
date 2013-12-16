@@ -64,7 +64,11 @@ $(JISON):
 
 .PHONY: test
 test: $(NODEUNIT)
-	@$(NODEUNIT) --reporter tap test/*.js
+	@(for F in test/*.js; do \
+		echo "# $$F" ;\
+		$(NODEUNIT) --reporter tap $$F ;\
+		[[ $$? == "0" ]] || exit 1; \
+	done)
 
 .PHONY: check
 check: check-jsl check-jsstyle

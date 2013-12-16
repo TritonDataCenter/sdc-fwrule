@@ -84,6 +84,7 @@ exports['all target types'] = function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        global: true,
         rule: util.format('FROM (ip %s OR subnet %s OR tag %s OR vm %s) '
             + 'TO (ip %s OR subnet %s OR tag %s OR vm %s) ALLOW tcp PORT 80',
             ips[0], subnets[0], tags[0], vms[0],
@@ -147,6 +148,7 @@ exports['any'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -158,12 +160,14 @@ exports['any'] = function (t) {
 
 exports['all vms'] = function (t) {
     var ip = '192.168.3.2';
+    var owner = '50716241-ac8d-4e63-a9e4-77ff07cede61';
 
     var ruleTxt = util.format('FROM ip %s TO all vms ALLOW tcp PORT 80', ip);
 
     var rule = fwrule.create({
         rule: ruleTxt,
         enabled: true,
+        owner_uuid: owner,
         version: fwrule.generateVersion()
     });
 
@@ -183,6 +187,7 @@ exports['all vms'] = function (t) {
             wildcards: ['vmall']
         },
         enabled: true,
+        owner_uuid: owner,
         ports: [ 80 ],
         action: 'allow',
         protocol: 'tcp',
@@ -198,6 +203,8 @@ exports['all vms'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        // no global flag set because the rule has an owner_uuid
+        owner_uuid: owner,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -240,6 +247,7 @@ exports['tags'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -342,6 +350,7 @@ exports['icmp'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -393,6 +402,7 @@ exports['icmp with code'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -448,6 +458,7 @@ exports['icmp: multiple types'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -499,6 +510,7 @@ exports['sorting: icmp codes'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: util.format(
         'FROM any TO vm %s ALLOW icmp '
         + '(TYPE 3 CODE 1 AND TYPE 3 CODE 5 AND TYPE 3 CODE 11 '
@@ -548,6 +560,7 @@ exports['sorting: ports'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
             + '(PORT 6 AND PORT 10 AND PORT 80 AND PORT 1002 AND PORT 1052 '
             + 'AND PORT 30245)',
@@ -596,6 +609,7 @@ exports['port ALL'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        global: true,
         rule: inRule.rule,
         uuid: rule.uuid,
         version: rule.version
@@ -639,6 +653,7 @@ exports['tags: equal'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -688,6 +703,7 @@ exports['multiple tags: equal'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -737,6 +753,7 @@ exports['multiple tags: multiple values'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        global: true,
         // 'some-tag = value0' is a subset of 'tag some-tag', so it is not
         // included in the rule text
         rule: 'FROM tag some-tag TO '
@@ -754,7 +771,9 @@ exports['multiple tags: multiple values'] = function (t) {
 
 
 exports['multiple tags: multiple quoted values'] = function (t) {
+    var owner = 'ace1da4b-9ab2-4991-8298-700bec1b70ed';
     var rule = new fwrule.create({
+        owner_uuid: owner,
         rule: 'FROM '
             + '(tag "김치" = "백김치" '
             + 'OR tag "김치" = "白김치") TO '
@@ -777,6 +796,7 @@ exports['multiple tags: multiple quoted values'] = function (t) {
             ],
             wildcards: []
         },
+        owner_uuid: owner,
         protocol: 'tcp',
         ports: [ 80 ],
         to: {
@@ -796,6 +816,7 @@ exports['multiple tags: multiple quoted values'] = function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        owner_uuid: owner,
         rule: 'FROM (tag "김치" = "白김치" '
             + 'OR tag "김치" = "백김치") TO '
             + '(tag "some tag" = value OR tag some-tag = "another value") '

@@ -24,6 +24,7 @@ function longStr() {
 }
 
 
+var VALID_RULE = 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53';
 var INVALID = [
     [ 'invalid IP: too many numbers',
         {
@@ -35,12 +36,12 @@ var INVALID = [
     [ 'invalid UUID',
         { uuid: 'invalid',
             rule: 'FROM tag foo TO ip 8.8.8.8 ALLOW udp port 53'
-        }, 'uuid', 'Invalid rule UUID "invalid"' ],
+        }, 'uuid', 'Invalid rule UUID' ],
 
     [ 'invalid owner UUID',
         { owner_uuid: 'invalid',
             rule: 'FROM tag foo TO ip 8.8.8.8 ALLOW udp port 53'
-        }, 'owner_uuid', 'Invalid owner UUID "invalid"' ],
+        }, 'owner_uuid', 'Invalid owner UUID' ],
 
     [ 'non-target type in FROM',
         { rule: 'FROM foo TO ip 8.8.8.8 ALLOW udp port 53' },
@@ -93,49 +94,49 @@ var INVALID = [
 
     [ 'created_by: object instead of string', {
         created_by: { },
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'created_by',
         'created_by must be a string'],
 
     [ 'created_by: array instead of string', {
         created_by: ['asdf'],
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'created_by',
         'created_by must be a string'],
 
     [ 'created_by: number instead of string', {
         created_by: 42,
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'created_by',
         'created_by must be a string'],
 
     [ 'created_by: string too long', {
         created_by: longStr(),
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'created_by',
         'created_by must be shorter than 255 characters'],
 
     [ 'description: object instead of string', {
         description: { },
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'description',
         'description must be a string'],
 
     [ 'description: array instead of string', {
         description: ['asdf'],
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'description',
         'description must be a string'],
 
     [ 'description: number instead of string', {
         description: 42,
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'description',
         'description must be a string'],
 
     [ 'description: string too long', {
         description: longStr(),
-        rule: 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53'
+        rule: VALID_RULE
         }, 'description',
         'description must be shorter than 255 characters'],
 
@@ -157,7 +158,20 @@ var INVALID = [
     [ 'rule: from ip to any', {
         rule: 'FROM ip 10.9.0.1 TO any ALLOW TCP port 53'
         }, 'rule',
-        'rule does not affect VMs']
+        'rule does not affect VMs'],
+
+    [ 'global: not boolean', {
+        rule: VALID_RULE,
+        global: 'asdf'
+        }, 'global',
+        'global must be true or false'],
+
+    [ 'both global and owner_uuid set', {
+        rule: VALID_RULE,
+        global: true,
+        owner_uuid: 'e7d9d022-6272-11e3-a746-131978000f45'
+        }, 'global',
+        'cannot specify both global and owner_uuid']
 ];
 
 
@@ -166,11 +180,13 @@ exports['Invalid rules'] = function (t) {
         var testName = data[0];
         var expMsg = data[3];
         var field = data[2];
+        var opts;
         var rule = data[1];
         var thrown = false;
 
         try {
-            fwrule.create(rule);
+            opts = (field == 'global' ? { enforceGlobal: true } : {});
+            fwrule.create(rule, opts);
         } catch (err) {
             thrown = true;
             t.equal(err.message, expMsg, 'Error message correct: ' + testName);
@@ -206,8 +222,8 @@ exports['Invalid parameters'] = function (t) {
             }), [
                 ['rule', 'Error at character 0: \'invalid\', '
                     + 'expected: \'FROM\', found: word'],
-                ['uuid', 'Invalid rule UUID "invalid"'],
-                ['owner_uuid', 'Invalid owner UUID "invalid"'],
+                ['uuid', 'Invalid rule UUID'],
+                ['owner_uuid', 'Invalid owner UUID'],
                 ['enabled', 'enabled must be true or false']
             ], 'sub-errors');
         }
@@ -225,8 +241,26 @@ exports['Missing rule field'] = function (t) {
         fwrule.create({});
     } catch (err) {
         thrown = true;
-        t.equal(err.message, 'No rule specified!', 'error message');
+        t.equal(err.message, 'No rule specified', 'error message');
         t.equal(err.field, 'rule', 'err.field');
+    }
+
+    t.ok(thrown, 'error thrown');
+    t.done();
+};
+
+
+exports['global and owner_uuid not set'] = function (t) {
+    var thrown = false;
+
+    try {
+        fwrule.create({
+            rule: 'FROM any to all vms ALLOW tcp port 80'
+        }, { enforceGlobal: true });
+    } catch (err) {
+        thrown = true;
+        t.equal(err.message, 'owner_uuid required', 'error message');
+        t.equal(err.field, 'owner_uuid', 'err.field');
     }
 
     t.ok(thrown, 'error thrown');
