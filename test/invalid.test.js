@@ -24,6 +24,37 @@ function longStr() {
 }
 
 
+function nIPs(n) {
+    var ips = [];
+    for (var i = 0; i < n; i++) {
+        ips.push('10.0.0.' + i);
+    }
+
+    return '( ip ' + ips.join(' OR ip ') + ' )';
+}
+
+
+function nPorts(n) {
+    var ports = [];
+    for (var i = 0; i < n; i++) {
+        ports.push('1' + i);
+    }
+
+    return '( port ' + ports.join(' AND port ') + ' )';
+}
+
+
+function nTypes(n) {
+    var types = [];
+    for (var i = 0; i < n; i++) {
+        types.push(i.toString());
+    }
+
+    return '( type ' + types.join(' AND type ') + ' )';
+}
+
+
+
 var VALID_RULE = 'FROM ip 10.0.0.1 TO all vms ALLOW TCP port 53';
 var INVALID = [
     [ 'invalid IP: too many numbers',
@@ -171,7 +202,27 @@ var INVALID = [
         global: true,
         owner_uuid: 'e7d9d022-6272-11e3-a746-131978000f45'
         }, 'global',
-        'cannot specify both global and owner_uuid']
+        'cannot specify both global and owner_uuid'],
+
+    [ 'rule: max number per side', {
+        rule: 'FROM ' + nIPs(25) + ' TO all vms ALLOW TCP port 53'
+        }, 'rule',
+        'maximum of 24 targets allowed per side'],
+
+    [ 'rule: max number per side', {
+        rule: 'FROM all vms TO ' + nIPs(25) + ' BLOCK TCP port 53'
+        }, 'rule',
+        'maximum of 24 targets allowed per side'],
+
+    [ 'rule: max number of ports', {
+        rule: 'FROM all vms TO ip 192.168.5.4 BLOCK TCP ' + nPorts(9)
+        }, 'rule',
+        'maximum of 24 ports allowed'],
+
+    [ 'rule: max number of ICMP types', {
+        rule: 'FROM all vms TO ip 192.168.5.4 BLOCK ICMP ' + nTypes(9)
+        }, 'rule',
+        'maximum of 24 types allowed']
 ];
 
 
