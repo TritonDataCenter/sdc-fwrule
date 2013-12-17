@@ -13,6 +13,14 @@ Adding and updating rules takes effect immediately.  Adding or removing
 tags on a VM causes rules that apply to those tags to be added or removed
 immediately.
 
+In the case of two rules that affect the same VM and port, the rule that
+goes counter to the default policy takes precedence.  This means:
+
+* If you have an incoming BLOCK and an incoming ALLOW rule for the
+  same VM and port, the ALLOW will override.
+* If you have an outgoing BLOCK and an outgoing ALLOW rule for the
+  same VM and port, the BLOCK will override.
+
 
 # Rule payload
 
