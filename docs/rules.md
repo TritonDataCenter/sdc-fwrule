@@ -55,30 +55,38 @@ Firewall rules are in the following format:
 
 The parameters are the following:
 
-* **from targets** and **to targets** can be any of the following types
-  (see the Target Types section below):
-  * vm &lt;uuid>
-  * ip &lt;IP address>
-  * subnet &lt;subnet CIDR>
-  * tag &lt;tag name>
-  * tag &lt;tag name>=&lt;tag value>
-  * a target list of up to 32 of the above
-  * all vms
-  * any
-* **action** can be one of (see the Actions section below):
-  * ALLOW
-  * BLOCK
-* **protocol** can be one of (see the Protocols section below):
-  * tcp
-  * udp
-  * icmp
-* **ports** or **types** can be one of (see the Ports section below):
-  * port &lt;port number> (if protocol is tcp or udp)
-  * type &lt;ICMP type> (if protocol is icmp)
-  * type &lt;ICMP type> code &lt;ICMP code> (if protocol is icmp)
+**from targets** and **to targets** can be any of the following types
+(see the Target Types section below):
+
+* vm <uuid>
+* ip <IP address>
+* subnet <subnet CIDR>
+* tag <tag name>
+* tag <tag name>=<tag value>
+* a target list of up to 32 of the above
+* all vms
+* any
+
+**action** can be one of (see the Actions section below):
+
+* ALLOW
+* BLOCK
+
+**protocol** can be one of (see the Protocols section below):
+
+* tcp
+* udp
+* icmp
+
+**ports** or **types** can be one of (see the Ports section below):
+
+* port <port number> (if protocol is tcp or udp)
+* type <ICMP type> (if protocol is icmp)
+* type <ICMP type> code <ICMP code> (if protocol is icmp)
 
 
 The limits for the parameters are:
+
 * 24 from targets
 * 24 to targets
 * 8 ports or types
