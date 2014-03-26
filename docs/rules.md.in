@@ -51,18 +51,20 @@ a rule.
 
 Firewall rules are in the following format:
 
-    FROM <lt;from targets> TO <lt;to targets> <lt;action> <lt;protocol> <lt;ports or types>
-    
+    {{#indent_and_wrap}}
+    FROM &lt;from targets> TO &lt;to targets> &lt;action> &lt;protocol> &lt;ports or types>
+    {{/indent_and_wrap}}
+
 The parameters are the following:
 
 **from targets** and **to targets** can be any of the following types
 (see the Target Types section below):
 
-* vm <lt;uuid>
-* ip <lt;IP address>
-* subnet <lt;subnet CIDR>
-* tag <lt;tag name>
-* tag <lt;tag name>=<lt;tag value>
+* vm &lt;uuid>
+* ip &lt;IP address>
+* subnet &lt;subnet CIDR>
+* tag &lt;tag name>
+* tag &lt;tag name>=&lt;tag value>
 * a target list of up to 32 of the above
 * all vms
 * any
@@ -80,9 +82,9 @@ The parameters are the following:
 
 **ports** or **types** can be one of (see the Ports section below):
 
-* port <lt;port number> (if protocol is tcp or udp)
-* type <lt;ICMP type> (if protocol is icmp)
-* type <lt;ICMP type> code <lt;ICMP code> (if protocol is icmp)
+* port &lt;port number> (if protocol is tcp or udp)
+* type &lt;ICMP type> (if protocol is icmp)
+* type &lt;ICMP type> code &lt;ICMP code> (if protocol is icmp)
 
 
 The limits for the parameters are:
@@ -96,7 +98,7 @@ The limits for the parameters are:
 
 ## vm
 
-    vm <lt;uuid>
+    vm &lt;uuid>
 
 Targets the VM with that UUID.
 
@@ -108,7 +110,7 @@ Allows HTTP traffic from any host to VM 04128...
 
 ## ip
 
-    ip <lt;IP address>
+    ip &lt;IP address>
 
 Targets the specified IPv4 address.
 
@@ -120,21 +122,23 @@ Blocks SMTP traffic to that IP.
 
 ## subnet
 
-    subnet <lt;subnet CIDR>
+    subnet &lt;subnet CIDR>
 
 Targets the specified IPv4 subnet range.
 
 **Example:**
 
+    {{#indent_and_wrap}}
     FROM subnet 10.8.0.0/16 TO vm 0f570678-c007-4610-a2c0-bbfcaab9f4e6 ALLOW tcp port 443
-    
+    {{/indent_and_wrap}}
+
 Allows HTTPS traffic from a private /16 to VM 0f57...
 
 ## tag
 
-    tag <lt;name>
-    tag <lt;name> = <lt;value>
-    tag "<lt;name with spaces>" = "<lt;value with spaces>"
+    tag &lt;name>
+    tag &lt;name> = &lt;value>
+    tag "&lt;name with spaces>" = "&lt;value with spaces>"
 
 Targets all VMs with the specified tag, or all VMs with the specified tag
 and value.  Both tag name and value can be quoted if they contain spaces.
@@ -180,15 +184,17 @@ Allows HTTP traffic from any IP to all VMs.
 
 ## target list
 
-    ( <lt;target> OR <lt;target> OR ... )
+    ( &lt;target> OR &lt;target> OR ... )
 
 The vm, ip, subnet and tag target types can be combined into a list surrounded
 by parentheses and joined by OR.
 
 **Example:**
 
+    {{#indent_and_wrap}}
     FROM (vm 163dcedb-828d-43c9-b076-625423250ee2 OR tag db) TO (subnet 10.2.2.0/24 OR ip 10.3.0.1) BLOCK tcp port 443
-    
+    {{/indent_and_wrap}}
+
 Blocks HTTPS traffic to an internal subnet and IP.
 
 
@@ -224,11 +230,11 @@ ports or types can be used (see the Ports section below).
 
 # Ports
 
-    port <lt;port number>
-    ( port <lt;port number> AND port <lt;port number> ... )
-    type <lt;icmp type>
-    type <lt;icmp type> code <lt;icmp code>
-    ( type <lt;icmp type> AND type <lt;icmp type> code <lt;icmp code> AND ... )
+    port &lt;port number>
+    ( port &lt;port number> AND port &lt;port number> ... )
+    type &lt;icmp type>
+    type &lt;icmp type> code &lt;icmp code>
+    ( type &lt;icmp type> AND type &lt;icmp type> code &lt;icmp code> AND ... )
 
 For TCP and UDP, this specifies the port numbers that the rule applies to.
 Port numbers must be between 1 and 65535, inclusive.
