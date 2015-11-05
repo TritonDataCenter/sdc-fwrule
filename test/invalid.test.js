@@ -114,6 +114,27 @@ var INVALID = [
         { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW udp port 65537' },
         'rule', 'Port number "65537" is invalid' ],
 
+    [ 'invalid port range: too small',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW tcp ports 0-20' },
+        'rule', 'Port number "0" is invalid' ],
+
+    [ 'invalid port range: too big',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW tcp ports 20-65537' },
+        'rule', 'Port number "65537" is invalid' ],
+
+    [ 'invalid port range: not a port (at end)',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW tcp ports 20-bar' },
+        'rule', 'Port number "bar" is invalid' ],
+
+    [ 'invalid port range: not a port (at beginning)',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW tcp ports bar-20' },
+        'rule', 'Port number "bar" is invalid' ],
+
+    [ 'invalid port range: incorrect range ordering',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW tcp ports 20 - 10' },
+        'rule',
+        'The end of the range (10) cannot be less than the start (20)' ],
+
     [ 'invalid VM UUID',
         { rule: 'FROM vm asdf TO subnet 10.8.0.0/24 ALLOW udp port 50' },
         'rule', 'UUID "asdf" is invalid'],

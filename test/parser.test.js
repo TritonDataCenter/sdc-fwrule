@@ -120,8 +120,12 @@ exports['case insensitivity'] = function (t) {
     };
 
     [
+        [ 'FROM IP 1.2.3.4 TO TAG some-tag ALLOW TCP PORTS 80', ipToTag ],
+        [ 'FROM IP 1.2.3.4 TO TAG some-tag ALLOW TCP ports 80', ipToTag ],
         [ 'FROM IP 1.2.3.4 TO TAG some-tag ALLOW TCP PORT 80', ipToTag ],
         [ 'from ip 1.2.3.4 to tag some-tag allow tcp port 80', ipToTag ],
+        [ util.format('from ANY to VM %s allow UDP ports 50', vm), anyToVM ],
+        [ util.format('from any to vm %s allow udp ports 50', vm), anyToVM ],
         [ util.format('from ANY to VM %s allow UDP port 50', vm), anyToVM ],
         [ util.format('from any to vm %s allow udp port 50', vm), anyToVM ],
         [ 'FROM SUBNET 10.8.0.0/16 TO ALL VMS ALLOW ICMP TYPE 30',
@@ -144,6 +148,30 @@ exports['case insensitivity'] = function (t) {
     t.done();
 };
 
+exports['port ranges'] = function (t) {
+
+    var rangeA = {
+        from: [ [ 'subnet', '10.8.0.0/16' ],
+                        [ 'ip', '10.9.0.1' ] ],
+        to: [ [ 'wildcard', 'vmall' ] ],
+        action: 'allow',
+        protocol: {
+            name: 'tcp',
+            targets: [ { start: 20, end: 40 } ]
+        }
+    };
+
+    [
+        [ 'FROM IP 1.2.3.4 TO TAG some-tag ALLOW TCP PORTS 20-40', rangeA ],
+        [ 'FROM IP 1.2.3.4 TO TAG some-tag ALLOW TCP PORTS 20 - 40', rangeA ]
+    ].forEach(function (data) {
+        try {
+            t.deepEqual(parser.parse(data[0]), data[1], data[0]);
+        } catch (err) {
+            t.ifError(err);
+        }
+    });
+};
 
 exports['icmp with code'] = function (t) {
     var vm = 'b0b92cd9-1fe7-4636-8477-81d2742566c2';

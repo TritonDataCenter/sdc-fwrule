@@ -15,6 +15,20 @@ There are two parts to this package:
 The parser is currently checked in to avoid requiring jison to be installed
 in order to use this package.
 
+After making changes to this repo, repos which depend on it should be updated
+and tested appropriately:
+
+* [sdc-fwapi](https://github.com/joyent/sdc-fwapi) should have the sdc-fwrule
+  Git commit bumped in its `package.json`.
+* [smartos-live](https://github.com/joyent/smartos-live) contains a copy in
+  `src/fw/tools/fwrule` which gets copied into other locations in the repo by
+  the `src/fw/tools/bin/rebuild-node-modules` script.
+* [sdc-cn-agent](https://github.com/joyent/sdc-cn-agent) keeps a checked-in copy
+  of fwadm and therefore fwrule in `node\_modules/fw` which should be kept in
+  sync with fwadm.
+* [sdc-firewaller-agent](https://github.com/joyent/sdc-firewaller-agent) keeps a
+  checked-in copy of fwadm and therefore fwrule in `deps/fw` which should be
+  kept in sync with fwadm.
 
 # Repository
 

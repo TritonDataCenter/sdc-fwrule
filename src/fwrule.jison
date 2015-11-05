@@ -57,6 +57,8 @@ t                       {digit}{1,3}
 "VMS"                   return 'VMS';
 "vms"                   return 'VMS';
 
+'-'                     return '-';
+','                     return ',';
 '='                     return '=';
 '('                     return '(';
 ')'                     return ')';
@@ -71,6 +73,8 @@ t                       {digit}{1,3}
 "allow"                 return 'ALLOW';
 "PORT"                  return 'PORT';
 "port"                  return 'PORT';
+"PORTS"                 return 'PORTS';
+"ports"                 return 'PORTS';
 "TCP"                   return 'TCP';
 "tcp"                   return 'TCP';
 "UDP"                   return 'UDP';
@@ -184,7 +188,11 @@ action
 protocol
     : TCP port_list
         { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
+    | TCP ports
+        { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
     | UDP port_list
+        { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
+    | UDP ports
         { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
     | ICMP type_list
         { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
@@ -211,6 +219,11 @@ port
         { $$ = [ $2 ]; }
     ;
 
+ports
+    : PORTS portnumbers
+        { $$ = $2; }
+    ;
+
 port_all
     : PORT ALL
         { $$ = [ $2.toLowerCase() ]; }
@@ -220,6 +233,22 @@ portnumber
     : WORD
         { yy.validatePortNumber($1);
           $$ = Number($1); }
+    ;
+
+portrange
+    : WORD
+        { $$ = [ yy.createMaybePortRange($1) ]; }
+    | WORD '-' WORD
+        { yy.validatePortNumber($1);
+          yy.validatePortNumber($3);
+          yy.validateRangeOrder($1, $3);
+          $$ = [{ 'start': $1, 'end': $3 }]; }
+    ;
+
+portnumbers
+    : portrange
+    | portnumbers ',' portrange
+        { $$ = $1.concat($3); }
     ;
 
 type_list
