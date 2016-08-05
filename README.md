@@ -1,10 +1,11 @@
 # sdc-fwrule
 
-This repository is part of the Joyent SmartDataCenter project (SDC).  For
-contribution guidelines, issues, and general documentation, visit the main
-[SDC](http://github.com/joyent/sdc) project page.
+This repository is part of the Joyent Triton project. See the [contribution
+guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md) --
+*Triton does not use GitHub PRs* -- and general documentation at the main
+[Triton project](https://github.com/joyent/triton) page.
 
-This contains shared code for manipulating SmartDataCenter firewall rules.
+This contains shared code for manipulating Triton firewall rules.
 There are two parts to this package:
 
 * A Jison grammar (src/fwrule.jison) that specifies a DSL for writing
