@@ -1,0 +1,10 @@
+/.gitmodules
+/.npmignore
+/Makefile
+/coverage
+/deps
+/docs
+/etc
+/src
+/test
+/tools

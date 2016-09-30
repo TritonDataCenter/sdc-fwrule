@@ -530,6 +530,56 @@ test('Tags: Quoted name and value', function (t) {
 });
 
 
+test('Tags: Escaped characters', function (t) {
+    var ruleTxt = 'FROM (tag "\\"" = "\\)" OR tag "\\n" = "\\b") TO tag "\\(" '
+        + 'BLOCK udp PORT 53';
+
+    t.deepEqual(parser.parse(ruleTxt), {
+        from: [ [ 'tag', [ '"', ')' ] ],
+                [ 'tag', [ '\n', '\b' ] ] ],
+        to: [ [ 'tag', '(' ] ],
+        action: 'block',
+        protocol: {
+            name: 'udp',
+            targets: [ 53 ]
+        }
+    });
+
+    t.end();
+});
+
+
+test('Tags: Parens shouldn\'t have to be escaped', function (t) {
+    var ruleTxt = 'FROM tag "(" = "(" TO tag ")" = ")" '
+        + 'BLOCK udp PORT 53';
+
+    t.deepEqual(parser.parse(ruleTxt), {
+        from: [ [ 'tag', [ '(', '(' ] ] ],
+        to: [ [ 'tag', [ ')', ')' ] ] ],
+        action: 'block',
+        protocol: {
+            name: 'udp',
+            targets: [ 53 ]
+        }
+    });
+
+    t.end();
+});
+
+
+test('Tags: UTF-8 characters can be written using \\u', function (t) {
+    var escapedTxt = 'FROM tag "\\u2603" = "\\u0631\\u062c\\u0644 '
+        + '\\u0627\\u0644\\u062b\\u0644\\u062c" TO tag "\\u26C4" '
+        + 'BLOCK udp PORT 53';
+    var unicodeTxt = 'FROM tag "☃" = "رجل الثلج" TO tag "⛄" '
+        + 'BLOCK udp PORT 53';
+
+    t.deepEqual(parser.parse(escapedTxt), parser.parse(unicodeTxt));
+
+    t.end();
+});
+
+
 test('Tags: Unicode characters', function (t) {
     var ruleTxt = 'FROM (tag "☂" = "ທ" OR '
         + 'tag "삼겹살" = "불고기")'

@@ -32,9 +32,84 @@ var fwrule = require('../lib/index');
 var util = require('util');
 var test = require('tape');
 
+var TAG_TEST =
+    'FROM tag "%s" = "%s" TO tag "%s" = "%s" ALLOW tcp PORT 80';
+var TAG_TEST_UNQUOTED = 'FROM tag %s = %s TO tag %s = %s ALLOW tcp PORT 80';
+
+function testTagInRules(t, unquotedOK, txtIn, txtOut, val) {
+    var desc = util.format('txtIn=%j, txtOut=%j, val=%j', txtIn, txtOut, val);
+    var ruleOut = util.format(TAG_TEST, txtOut, txtOut, txtOut, txtOut);
+    var toParse = [ util.format(TAG_TEST, txtIn, txtIn, txtIn, txtIn) ];
+
+    if (unquotedOK) {
+        toParse.push(
+            util.format(TAG_TEST_UNQUOTED, txtIn, txtIn, txtIn, txtIn));
+    }
+
+    toParse.forEach(function (ruleIn) {
+        var rule = fwrule.create({
+            rule: ruleIn,
+            created_by: 'fwadm',
+            description: desc,
+            enabled: true,
+            version: fwrule.generateVersion()
+        });
+
+        var raw = {
+            from: {
+                ips: [],
+                subnets: [],
+                vms: [],
+                tags: [ [ val, val ] ],
+                wildcards: []
+            },
+            to: {
+                ips: [],
+                subnets: [],
+                vms: [],
+                tags: [ [ val, val ] ],
+                wildcards: []
+            },
+            created_by: 'fwadm',
+            description: desc,
+            enabled: true,
+            ports: [ 80 ],
+            action: 'allow',
+            protocol: 'tcp',
+            uuid: rule.uuid,
+            version: rule.version
+        };
+
+        t.deepEqual(rule.raw(), raw, desc + ': rule.raw()');
+        t.deepEqual(rule.from, raw.from, desc + ': rule.from');
+        t.deepEqual(rule.to, raw.to, desc + ': rule.to');
+        t.ok(!rule.allVMs, desc + ': rule.allVMs');
+
+        var ser = {
+            created_by: 'fwadm',
+            description: desc,
+            enabled: true,
+            global: true,
+            rule: ruleOut,
+            uuid: rule.uuid,
+            version: rule.version
+        };
+
+        t.deepEqual(rule.serialize(), ser, 'rule.serialize()');
+        t.deepEqual(rule.serialize(['enabled', 'version']),
+            { enabled: ser.enabled, version: ser.version },
+            'rule.serialize(): enabled, version');
+    });
+}
 
 
+function checkTagsInRules(t, toCheck) {
+    toCheck.forEach(function (cfg) {
+        testTagInRules(t, cfg.unquotedOK, cfg.in, cfg.out, cfg.val);
+    });
 
+    t.end();
+}
 
 
 // --- Tests
@@ -107,8 +182,8 @@ test('all target types', function (t) {
         description: desc,
         enabled: true,
         global: true,
-        rule: util.format('FROM (ip %s OR subnet %s OR tag %s OR vm %s) '
-            + 'TO (ip %s OR subnet %s OR tag %s OR vm %s) ALLOW tcp PORT 80',
+        rule: util.format('FROM (ip %s OR subnet %s OR tag "%s" OR vm %s) '
+            + 'TO (ip %s OR subnet %s OR tag "%s" OR vm %s) ALLOW tcp PORT 80',
             ips[0], subnets[0], tags[0], vms[0],
             ips[1], subnets[1], tags[1], vms[1]),
         uuid: rule.uuid,
@@ -131,8 +206,8 @@ test('any', function (t) {
     var subnet = '192.168.0.0/16';
 
     var ruleTxt = util.format(
-        'FROM (ip %s OR subnet %s OR tag %s OR vm %s) TO any ALLOW tcp PORT 80',
-        ip, subnet, tag, vm);
+        'FROM (ip %s OR subnet %s OR tag "%s" OR vm %s) TO any'
+        + ' ALLOW tcp PORT 80', ip, subnet, tag, vm);
 
     var rule = fwrule.create({
         rule: ruleTxt,
@@ -270,7 +345,53 @@ test('tags', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        rule: 'FROM ip 1.2.3.4 TO tag "some-tag" ALLOW tcp PORT 80',
+        uuid: rule.uuid,
+        version: rule.version
+    }, 'rule.serialize()');
+    t.ok(!rule.allVMs, 'rule.allVMs');
+
+    t.end();
+});
+
+
+test('tag "hasOwnProperty"', function (t) {
+    var ruleTxt = 'FROM ip 1.2.3.4 TO (tag hasOwnProperty OR tag some-tag) '
+        + 'ALLOW tcp PORT 80';
+    var rule = new fwrule.create({
         rule: ruleTxt,
+        version: fwrule.generateVersion()
+    });
+
+    var raw = {
+        action: 'allow',
+        enabled: false,
+        from: {
+            ips: [ '1.2.3.4' ],
+            vms: [],
+            subnets: [],
+            tags: [],
+            wildcards: []
+        },
+        protocol: 'tcp',
+        ports: [ 80 ],
+        to: {
+            ips: [],
+            vms: [],
+            subnets: [],
+            tags: [ 'hasOwnProperty', 'some-tag' ],
+            wildcards: []
+        },
+        uuid: rule.uuid,
+        version: rule.version
+    };
+    t.deepEqual(rule.raw(), raw, 'rule.raw()');
+
+    t.deepEqual(rule.serialize(), {
+        enabled: false,
+        global: true,
+        rule: 'FROM ip 1.2.3.4 TO (tag "hasOwnProperty" OR tag "some-tag") '
+            + 'ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
     }, 'rule.serialize()');
@@ -282,14 +403,14 @@ test('tags', function (t) {
 
 test('multiple ports and owner_uuid', function (t) {
     var inRule1 = {
-        rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
+        rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + '(PORT 1002 AND PORT 1052)',
         enabled: true,
         owner_uuid: '930896af-bf8c-48d4-885c-6573a94b1853',
         version: fwrule.generateVersion()
     };
     var inRule2 = {
-        rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
+        rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + 'PORTS 1002, 1052',
         enabled: true,
         owner_uuid: '930896af-bf8c-48d4-885c-6573a94b1853',
@@ -662,7 +783,7 @@ test('sorting: ports', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
-        rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
+        rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + '(PORT 6 AND PORT 10 AND PORT 80 AND PORT 1002 AND PORT 1052 '
             + 'AND PORT 30245)',
         uuid: rule.uuid,
@@ -715,7 +836,7 @@ test('sorting: port ranges', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
-        rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
+        rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + 'PORTS 6 - 11, 10, 20 - 40, 80, 1002, 1052, 30245',
         uuid: rule.uuid,
         version: rule.version
@@ -762,7 +883,7 @@ test('single port range', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
-        rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
+        rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + 'PORTS 50 - 50',
         uuid: rule.uuid,
         version: rule.version
@@ -773,8 +894,8 @@ test('single port range', function (t) {
 
 
 test('port ALL', function (t) {
-    var normalText = 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp PORT all';
-    var parenText = 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp ( PORT all )';
+    var normalText = 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp PORT all';
+    var parenText = 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp ( PORT all )';
     var ruleTexts = [ normalText, parenText ];
 
     ruleTexts.forEach(function (ruleText) {
@@ -860,7 +981,7 @@ test('tags: equal', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
-        rule: ruleTxt,
+        rule: 'FROM ip 1.2.3.4 TO tag "some-tag" = "value" ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
     }, 'rule.serialize()');
@@ -910,7 +1031,9 @@ test('multiple tags: equal', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
-        rule: ruleTxt,
+        rule: 'FROM ip 1.2.3.4 TO '
+            + '(tag "some-tag" = "value" OR tag "some-tag" = "value2")'
+            + ' ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
     }, 'rule.serialize()');
@@ -962,8 +1085,8 @@ test('multiple tags: multiple values', function (t) {
         global: true,
         // 'some-tag = value0' is a subset of 'tag some-tag', so it is not
         // included in the rule text
-        rule: 'FROM tag some-tag TO '
-            + '(tag some-tag = value OR tag some-tag = value2) '
+        rule: 'FROM tag "some-tag" TO '
+            + '(tag "some-tag" = "value" OR tag "some-tag" = "value2") '
             + 'ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
@@ -1025,7 +1148,7 @@ test('multiple tags: multiple quoted values', function (t) {
         owner_uuid: owner,
         rule: 'FROM (tag "김치" = "白김치" '
             + 'OR tag "김치" = "백김치") TO '
-            + '(tag "some tag" = value OR tag some-tag = "another value") '
+            + '(tag "some tag" = "value" OR tag "some-tag" = "another value") '
             + 'ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
@@ -1362,4 +1485,105 @@ test('Mixed IPv4 and IPv6', function (t) {
         'rule.serialize(): enabled, version');
 
     t.end();
+});
+
+
+test('Tag names and values: Normal', function (t) {
+    var tags = [ 'foo', 'foo-bar', 'foo_bar', 'db2', 'foo_bar-baz', '_' ];
+
+    var check = [];
+    tags.forEach(function (tag) {
+        check.push({ unquotedOK: true, in: tag, out: tag, val: tag });
+        var tagUpper = tag.toUpperCase();
+        check.push({
+            unquotedOK: true,
+            in: tagUpper,
+            out: tagUpper,
+            val: tagUpper
+        });
+    });
+
+    checkTagsInRules(t, check);
+});
+
+
+test('Tag names and values: IP addresses and subnets', function (t) {
+    checkTagsInRules(t, [
+        { in: '1.2.3.4', out: '1.2.3.4', val: '1.2.3.4' },
+        { in: '1.2.3.0/24', out: '1.2.3.0/24', val: '1.2.3.0/24' },
+        { in: '1.2.3.0\\/24', out: '1.2.3.0/24', val: '1.2.3.0/24' },
+        { in: 'fd00::a:b:c:5', out: 'fd00::a:b:c:5', val: 'fd00::a:b:c:5' },
+        { in: 'fc00::/7', out: 'fc00::/7', val: 'fc00::/7' },
+        { in: 'fc00::\\/7', out: 'fc00::/7', val: 'fc00::/7' }
+    ]);
+});
+
+
+test('Tag names and values: Numeric', function (t) {
+    var numbers = [
+        '0', '1', '5', '2000', '1234567890', '987654321', '23', '00000', '0',
+        '01', '10', '111111111'
+    ];
+
+    var check = [];
+    numbers.forEach(function (num) {
+        check.push({ unquotedOK: true, in: num, out: num, val: num });
+    });
+
+    checkTagsInRules(t, check);
+});
+
+
+test('Tag names and values: Keywords', function (t) {
+    var kws = [
+        'tag', 'from', 'to', 'ip', 'subnet', 'vm', 'any', 'all', 'all vms',
+        'vms', 'or', 'and', 'block', 'allow', 'port', 'ports', 'tcp', 'udp',
+        'icmp', 'icmp6', 'type', 'code'
+    ];
+
+    var check = [];
+    kws.forEach(function (kw) {
+        check.push({ in: kw, out: kw, val: kw });
+        var kwUpper = kw.toUpperCase();
+        check.push({ in: kwUpper, out: kwUpper, val: kwUpper });
+    });
+
+    checkTagsInRules(t, check);
+});
+
+
+test('Tag names and values: Escaped characters', function (t) {
+    checkTagsInRules(t, [
+        { val: '\t', in: '\t', out: '\\t' },
+        { val: '\t', in: '\\t', out: '\\t' },
+        { val: '\n', in: '\n', out: '\\n' },
+        { val: '\n', in: '\\n', out: '\\n' },
+        { val: '\b', in: '\b', out: '\\b' },
+        { val: '\b', in: '\\b', out: '\\b' },
+        { val: '\f', in: '\f', out: '\\f' },
+        { val: '\f', in: '\\f', out: '\\f' },
+        { val: '/', in: '/', out: '/' },
+        { val: '/', in: '\\/', out: '/' },
+        { val: '(', in: '(', out: '\\(' },
+        { val: '(', in: '\\(', out: '\\(' },
+        { val: ')', in: ')', out: '\\)' },
+        { val: ')', in: '\\)', out: '\\)' },
+        { val: '"', in: '\\"', out: '\\"' },
+        { val: '\\', in: '\\\\', out: '\\\\' }
+    ]);
+});
+
+
+test('Tag names and values: Odd characters', function (t) {
+    var chars = [
+        '!', '@', '#', '$', '%', '^', '&', '*', ',', '.', '<', '>', '?', ';',
+        ':', '\'', '[', ']', '{', '}', '|', '=', '+', '~', '`', '-', '_'
+    ];
+
+    var check = [];
+    chars.forEach(function (c) {
+        check.push({ in: c, out: c, val: c });
+    });
+
+    checkTagsInRules(t, check);
 });
