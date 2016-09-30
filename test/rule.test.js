@@ -26,14 +26,14 @@
  * Unit tests for the firewall rule object
  */
 
+'use strict';
+
 var fwrule = require('../lib/index');
 var util = require('util');
+var test = require('tape');
 
 
 
-// Set this to any of the exports in this file to only run that test,
-// plus setup and teardown
-var runOne;
 
 
 
@@ -41,17 +41,17 @@ var runOne;
 
 
 
-exports['rule exports'] = function (t) {
+test('rule exports', function (t) {
     ['ACTIONS', 'DIRECTIONS', 'FIELDS', 'PROTOCOLS', 'TARGET_TYPES'].forEach(
         function (field) {
         t.ok(fwrule[field].length > 0, 'fwrule.' + field);
     });
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['all target types'] = function (t) {
+test('all target types', function (t) {
     var desc = 'all target types';
     var ips = ['192.168.1.1', '10.2.0.3'];
     var vms = ['9a343ca8-b42a-4a27-a9c5-800f57d1e8ed',
@@ -120,11 +120,11 @@ exports['all target types'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['any'] = function (t) {
+test('any', function (t) {
     var ip = '192.168.3.2';
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var tag = 'tag3';
@@ -176,11 +176,11 @@ exports['any'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['all vms'] = function (t) {
+test('all vms', function (t) {
     var ip = '192.168.3.2';
     var owner = '50716241-ac8d-4e63-a9e4-77ff07cede61';
 
@@ -232,11 +232,11 @@ exports['all vms'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['tags'] = function (t) {
+test('tags', function (t) {
     var ruleTxt = 'FROM ip 1.2.3.4 TO tag some-tag ALLOW tcp PORT 80';
     var rule = new fwrule.create({
         rule: ruleTxt,
@@ -276,11 +276,11 @@ exports['tags'] = function (t) {
     }, 'rule.serialize()');
     t.ok(!rule.allVMs, 'rule.allVMs');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['multiple ports and owner_uuid'] = function (t) {
+test('multiple ports and owner_uuid', function (t) {
     var inRule1 = {
         rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
             + '(PORT 1002 AND PORT 1052)',
@@ -336,6 +336,7 @@ exports['multiple ports and owner_uuid'] = function (t) {
     }, 'rule1.serialize()');
 
     raw.uuid = rule2.uuid;
+    raw.version = rule2.version;
 
     t.deepEqual(rule2.raw(), raw, 'rule2.raw()');
     t.deepEqual(rule2.ports, raw.ports, 'rule2.ports');
@@ -349,11 +350,11 @@ exports['multiple ports and owner_uuid'] = function (t) {
         version: rule2.version
     }, 'rule2.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['icmp'] = function (t) {
+test('icmp', function (t) {
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
 
     var ruleTxt = util.format(
@@ -401,11 +402,11 @@ exports['icmp'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['icmp with code'] = function (t) {
+test('icmp with code', function (t) {
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
 
     var ruleTxt = util.format(
@@ -453,11 +454,11 @@ exports['icmp with code'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['icmp: multiple types'] = function (t) {
+test('icmp: multiple types', function (t) {
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
 
     var ruleTxt = util.format(
@@ -509,11 +510,11 @@ exports['icmp: multiple types'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['sorting: icmp codes'] = function (t) {
+test('sorting: icmp codes', function (t) {
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
 
     var rule = fwrule.create({
@@ -564,10 +565,11 @@ exports['sorting: icmp codes'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['sorting: icmp6 codes'] = function (t) {
+
+test('sorting: icmp6 codes', function (t) {
     var vm = '8a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
 
     var rule = fwrule.create({
@@ -618,10 +620,11 @@ exports['sorting: icmp6 codes'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['sorting: ports'] = function (t) {
+
+test('sorting: ports', function (t) {
     var inRule = {
         rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
             + '(PORT 1002 AND PORT 10 AND PORT 1052 AND PORT 80 AND PORT 30245 '
@@ -666,10 +669,11 @@ exports['sorting: ports'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['sorting: port ranges'] = function (t) {
+
+test('sorting: port ranges', function (t) {
     var inRule = {
         rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
             + 'PORTS 1002, 20-40, 10, 1052, 80, 30245, 6 - 11',
@@ -717,10 +721,11 @@ exports['sorting: port ranges'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['single port range'] = function (t) {
+
+test('single port range', function (t) {
     var inRule = {
         rule: 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp '
             + 'PORTS 50-50',
@@ -763,10 +768,11 @@ exports['single port range'] = function (t) {
         version: rule.version
     }, 'rule.serialize()');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['port ALL'] = function (t) {
+
+test('port ALL', function (t) {
     var normalText = 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp PORT all';
     var parenText = 'FROM ip 10.88.88.1 TO tag tag2 ALLOW tcp ( PORT all )';
     var ruleTexts = [ normalText, parenText ];
@@ -815,11 +821,11 @@ exports['port ALL'] = function (t) {
         }, 'rule.serialize()');
     });
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['tags: equal'] = function (t) {
+test('tags: equal', function (t) {
     var ruleTxt =
         'FROM ip 1.2.3.4 TO tag some-tag = value ALLOW tcp PORT 80';
     var rule = new fwrule.create({
@@ -862,11 +868,11 @@ exports['tags: equal'] = function (t) {
     t.ok(!rule.allVMs, 'rule.allVMs');
     t.deepEqual(rule.tags, raw.to.tags, 'rule.tags');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['multiple tags: equal'] = function (t) {
+test('multiple tags: equal', function (t) {
     var ruleTxt = 'FROM ip 1.2.3.4 TO '
         + '(tag some-tag = value OR tag some-tag = value2) ALLOW tcp PORT 80';
     var rule = new fwrule.create({
@@ -912,11 +918,11 @@ exports['multiple tags: equal'] = function (t) {
     t.ok(!rule.allVMs, 'rule.allVMs');
     t.deepEqual(rule.tags, raw.to.tags, 'rule.tags');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['multiple tags: multiple values'] = function (t) {
+test('multiple tags: multiple values', function (t) {
     var rule = new fwrule.create({
         rule: 'FROM (tag some-tag OR tag some-tag = value0) TO '
             + '(tag some-tag = value OR tag some-tag = value2) '
@@ -966,11 +972,11 @@ exports['multiple tags: multiple values'] = function (t) {
     t.ok(!rule.allVMs, 'rule.allVMs');
     t.deepEqual(rule.tags, raw.from.tags, 'rule.tags');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['multiple tags: multiple quoted values'] = function (t) {
+test('multiple tags: multiple quoted values', function (t) {
     var owner = 'ace1da4b-9ab2-4991-8298-700bec1b70ed';
     var rule = new fwrule.create({
         owner_uuid: owner,
@@ -1033,11 +1039,11 @@ exports['multiple tags: multiple quoted values'] = function (t) {
                 [ '김치', '백김치' ]
         ], 'rule.tags');
 
-    t.done();
-};
+    t.end();
+});
 
 
-exports['IPv6 sources'] = function (t) {
+test('IPv6 sources', function (t) {
     var desc = 'IPv6 sources';
     var vm = '9a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var ips = ['fd00::2', 'fe80::8:20ff:fe40:65e4'];
@@ -1097,10 +1103,11 @@ exports['IPv6 sources'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['IPv6 subnet sources'] = function (t) {
+
+test('IPv6 subnet sources', function (t) {
     var desc = 'IPv6 subnet sources';
     var vm = '9a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var cidr = 'fd00::/64';
@@ -1160,10 +1167,11 @@ exports['IPv6 subnet sources'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['IPv6 destinations'] = function (t) {
+
+test('IPv6 destinations', function (t) {
     var desc = 'IPv6 destinations';
     var vm = '9a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var ips = ['fd00::1', 'fd00::2'];
@@ -1223,10 +1231,11 @@ exports['IPv6 destinations'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['IPv6 subnet destinations'] = function (t) {
+
+test('IPv6 subnet destinations', function (t) {
     var desc = 'IPv6 subnet destinations';
     var vm = '9a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var cidr = 'fd00::/64';
@@ -1286,10 +1295,11 @@ exports['IPv6 subnet destinations'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
+    t.end();
+});
 
-exports['Mixed IPv4 and IPv6'] = function (t) {
+
+test('Mixed IPv4 and IPv6', function (t) {
     var desc = 'Mixed IPv4 and IPv6';
     var vm1 = '9a343ca8-b42a-4a27-a9c5-800f57d1e8ed';
     var vm2 = '518908b6-8299-466d-8ea5-20a0ceff63ec';
@@ -1351,14 +1361,5 @@ exports['Mixed IPv4 and IPv6'] = function (t) {
         { enabled: ser.enabled, version: ser.version },
         'rule.serialize(): enabled, version');
 
-    t.done();
-};
-
-
-
-// Use to run only one test in this file:
-if (runOne) {
-    module.exports = {
-        oneTest: runOne
-    };
-}
+    t.end();
+});
