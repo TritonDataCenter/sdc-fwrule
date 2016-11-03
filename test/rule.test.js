@@ -36,8 +36,20 @@ var TAG_TEST =
     'FROM tag "%s" = "%s" TO tag "%s" = "%s" ALLOW tcp PORT 80';
 var TAG_TEST_UNQUOTED = 'FROM tag %s = %s TO tag %s = %s ALLOW tcp PORT 80';
 
+
+function stringify(val) {
+    switch (val) {
+    case '\u0085':
+        return '"\\u0085"';
+    default:
+        return JSON.stringify(val);
+    }
+}
+
+
 function testTagInRules(t, unquotedOK, txtIn, txtOut, val) {
-    var desc = util.format('txtIn=%j, txtOut=%j, val=%j', txtIn, txtOut, val);
+    var desc = util.format('txtIn=%s, txtOut=%s, val=%s',
+        stringify(txtIn), stringify(txtOut), stringify(val));
     var ruleOut = util.format(TAG_TEST, txtOut, txtOut, txtOut, txtOut);
     var toParse = [ util.format(TAG_TEST, txtIn, txtIn, txtIn, txtIn) ];
 
@@ -1554,14 +1566,23 @@ test('Tag names and values: Keywords', function (t) {
 
 test('Tag names and values: Escaped characters', function (t) {
     checkTagsInRules(t, [
+        { val: ' ', in: ' ', out: ' ' },
+        { val: ' ', in: '\\u0020', out: ' ' },
         { val: '\t', in: '\t', out: '\\t' },
         { val: '\t', in: '\\t', out: '\\t' },
+        { val: '\t', in: '\\u0009', out: '\\t' },
         { val: '\n', in: '\n', out: '\\n' },
         { val: '\n', in: '\\n', out: '\\n' },
+        { val: '\n', in: '\\u000A', out: '\\n' },
         { val: '\b', in: '\b', out: '\\b' },
         { val: '\b', in: '\\b', out: '\\b' },
+        { val: '\b', in: '\\u0008', out: '\\b' },
         { val: '\f', in: '\f', out: '\\f' },
         { val: '\f', in: '\\f', out: '\\f' },
+        { val: '\f', in: '\\u000C', out: '\\f' },
+        { val: '\r', in: '\r', out: '\\r' },
+        { val: '\r', in: '\\r', out: '\\r' },
+        { val: '\r', in: '\\u000D', out: '\\r' },
         { val: '/', in: '/', out: '/' },
         { val: '/', in: '\\/', out: '/' },
         { val: '(', in: '(', out: '\\(' },
@@ -1583,6 +1604,96 @@ test('Tag names and values: Odd characters', function (t) {
     var check = [];
     chars.forEach(function (c) {
         check.push({ in: c, out: c, val: c });
+    });
+
+    checkTagsInRules(t, check);
+});
+
+
+test('Tag names and values: ASCII control characters', function (t) {
+    var chars = [
+        '0000', // null (NUL)
+        '0001', // start of heading (SOH)
+        '0002', // start of text (STX)
+        '0003', // end of text (ETX)
+        '0004', // end of transmission (EOT)
+        '0005', // enquiry (ENQ)
+        '0006', // acknowledgement (ACK)
+        '0007', // bell (BEL)
+        '000B', // vertical tab (VT)
+        '000E', // shift out (SO)
+        '000F', // shift in (SI)
+        '0010', // data link escape (DLE)
+        '0011', // device control 1 (DC1)/XON
+        '0012', // device control 2 (DC2)
+        '0013', // device control 3 (DC3)/XOFF
+        '0014', // device control 4 (DC4)
+        '0015', // negative acknowledgement (NAK)
+        '0016', // synchronous idle (SYN)
+        '0017', // end of transmission block (ETB)
+        '0018', // cancel (CAN)
+        '0019', // end of medium (EM)
+        '001A', // substitute (SUB)
+        '001B', // escape (ESC)
+        '001C', // file separator (FS)
+        '001D', // group separator (GS)
+        '001E', // record separator (RS)
+        '001F', // unit separator (US)
+        '007F'  // delete (DEL)
+    ];
+
+    var check = [];
+    chars.forEach(function (str) {
+        var space = String.fromCharCode(parseInt(str, 16));
+        var escaped = '\\u' + str;
+        var escapedLC = '\\u' + str.toLowerCase();
+        check.push({ in: space, out: escaped, val: space });
+        check.push({ in: escaped, out: escaped, val: space });
+        check.push({ in: escapedLC, out: escaped, val: space });
+    });
+
+    checkTagsInRules(t, check);
+});
+
+
+test('Tag names and values: Unicode whitespace characters', function (t) {
+    var chars = [
+        '000B', // vertical tab
+        '0085', // next line
+        '00A0', // non-breaking space
+        '1680', // ogham space mark
+        '180E', // mongolian vowel separator
+        '2000', // en quad
+        '2001', // em quad
+        '2002', // en space
+        '2003', // em space
+        '2004', // three-per-em space
+        '2005', // four-per-em space
+        '2006', // six-per-em space
+        '2007', // figure space
+        '2008', // punctuation space
+        '2009', // thin space
+        '200A', // hair space
+        '200B', // zero width space
+        '200C', // zero width non-joiner
+        '200D', // zero width joiner
+        '2028', // line separator
+        '2029', // paragraph separator
+        '202F', // narrow no-break space
+        '205F', // medium mathematical space
+        '2060', // word joiner
+        '3000', // ideographic space
+        'FEFF'  // zero width no-break space
+    ];
+
+    var check = [];
+    chars.forEach(function (str) {
+        var space = String.fromCharCode(parseInt(str, 16));
+        var escaped = '\\u' + str;
+        var escapedLC = '\\u' + str.toLowerCase();
+        check.push({ in: space, out: escaped, val: space });
+        check.push({ in: escaped, out: escaped, val: space });
+        check.push({ in: escapedLC, out: escaped, val: space });
     });
 
     checkTagsInRules(t, check);
