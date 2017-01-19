@@ -20,7 +20,7 @@
  *
  * CDDL HEADER END
  *
- * Copyright (c) 2016, Joyent, Inc. All rights reserved.
+ * Copyright 2017, Joyent, Inc. All rights reserved.
  *
  *
  * Negative unit tests for the firewall rule object
@@ -108,19 +108,27 @@ var INVALID = [
 
     [ 'invalid IPv4 subnet: bad address component',
         { rule: 'FROM tag foo TO subnet 10.350.0.0/24 ALLOW udp port 53' },
-        'rule', 'Subnet "10.350.0.0/24" is invalid (must be in CIDR format)' ],
+        'rule', 'Subnet "10.350.0.0/24" is invalid (bad address component)' ],
 
     [ 'invalid IPv4 subnet: bad prefix length',
         { rule: 'FROM tag foo TO subnet 10.8.0.0/33 ALLOW udp port 53' },
-        'rule', 'Subnet "10.8.0.0/33" is invalid (must be in CIDR format)' ],
+        'rule', 'Subnet "10.8.0.0/33" is invalid (bad prefix length)' ],
+
+    [ 'invalid IPv4 subnet: bits set past mask',
+        { rule: 'FROM tag foo TO subnet 10.8.0.0/5 ALLOW udp port 53' },
+        'rule', 'Subnet "10.8.0.0/5" is invalid (bits set to right of mask)' ],
 
     [ 'invalid IPv6 subnet: bad address component',
         { rule: 'FROM tag foo TO subnet fd005::/64 ALLOW udp port 53' },
-        'rule', 'Subnet "fd005::/64" is invalid (must be in CIDR format)' ],
+        'rule', 'Subnet "fd005::/64" is invalid (bad address component)' ],
 
     [ 'invalid IPv6 subnet: bad prefix length',
         { rule: 'FROM tag foo TO subnet fd00::/130 ALLOW udp port 53' },
-        'rule', 'Subnet "fd00::/130" is invalid (must be in CIDR format)' ],
+        'rule', 'Subnet "fd00::/130" is invalid (bad prefix length)' ],
+
+    [ 'invalid IPv6 subnet: bits set past mask',
+        { rule: 'FROM tag foo TO subnet fd00::/2 ALLOW udp port 53' },
+        'rule', 'Subnet "fd00::/2" is invalid (bits set to right of mask)' ],
 
     [ 'invalid port: too small',
         { rule: 'FROM tag foo TO subnet 10.8.0.0/24 ALLOW udp port 0' },
@@ -339,12 +347,14 @@ test('Invalid rules', function (t) {
         var testName = data[0];
         var expMsg = data[3];
         var field = data[2];
-        var opts;
+        var opts = { enforceSubnetMask: true };
         var rule = data[1];
         var thrown = false;
 
         try {
-            opts = (field === 'global' ? { enforceGlobal: true } : {});
+            if (field === 'global') {
+                opts.enforceGlobal = true;
+            }
             fwrule.create(rule, opts);
         } catch (err) {
             thrown = true;

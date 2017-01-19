@@ -390,6 +390,66 @@ test('Parser option: maxVersion', function (t) {
 });
 
 
+test('Parser option: enforceSubnetMask', function (t) {
+    var errFmt = 'Subnet "%s" is invalid (bits set to right of mask)';
+    var txtFmt = 'FROM subnet %s TO TAG foo ALLOW TCP PORTS 80';
+    function parsed(cidr) {
+        return {
+            from: [ [ 'subnet', cidr ] ],
+            to: [ [ 'tag', 'foo' ] ],
+            action: 'allow',
+            protocol: {
+                name: 'tcp',
+                targets: [ 80 ]
+            }
+        };
+    }
+
+    var v4sub = '1.2.3.4/24';
+    var v4rule = util.format(txtFmt, v4sub);
+    var v4parsed = parsed(v4sub);
+
+    var v6sub = 'fd00::1/8';
+    var v6rule = util.format(txtFmt, v6sub);
+    var v6parsed = parsed(v6sub);
+
+    var disabled = { enforceSubnetMask: false };
+    var enabled = { enforceSubnetMask: true };
+    var unspecified = { };
+
+    [
+        [ v4rule, enabled, util.format(errFmt, v4sub) ],
+        [ v6rule, enabled, util.format(errFmt, v6sub) ]
+    ].forEach(function (cfg) {
+        var desc = util.format('opts=%j, rule=%s', cfg[1], cfg[0]);
+        try {
+            parser.parse(cfg[0], cfg[1]);
+            t.fail(desc);
+        } catch (err) {
+            t.equal(err.message, cfg[2], desc);
+        }
+    });
+
+    [
+        [ v4rule, undefined, v4parsed ],
+        [ v4rule, disabled, v4parsed ],
+        [ v4rule, unspecified, v4parsed ],
+        [ v6rule, undefined, v6parsed ],
+        [ v6rule, disabled, v6parsed ],
+        [ v6rule, unspecified, v6parsed ]
+    ].forEach(function (cfg) {
+        var desc = util.format('opts=%j, rule=%s', cfg[1], cfg[0]);
+        try {
+            t.deepEqual(parser.parse(cfg[0], cfg[1]), cfg[2], desc);
+        } catch (err) {
+            t.ifError(err, desc);
+        }
+    });
+
+    t.end();
+});
+
+
 test('icmp with code', function (t) {
     var vm = 'b0b92cd9-1fe7-4636-8477-81d2742566c2';
     var ruleTxt = util.format('FROM ip 10.0.0.2 TO vm %s ALLOW icmp type 8 '

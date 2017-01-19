@@ -153,7 +153,7 @@ ipv4
 
 ipv4_subnet
     : SUBNET IPV4ADDR CIDRSUFFIX
-        { yy.validateIPv4subnet($2 + $3);
+        { yy.validateSubnet($2 + $3);
             $$ = [ ['subnet', $2 + $3] ]; }
     ;
 
@@ -167,7 +167,7 @@ ipv6
 ipv6_subnet
     : SUBNET IPV6ADDR CIDRSUFFIX
         { yy.validateOKVersion(3, 'IPv6');
-          yy.validateIPv6subnet($2 + $3);
+          yy.validateSubnet($2 + $3);
             $$ = [ ['subnet', $2 + $3] ]; }
     ;
 
