@@ -20,7 +20,7 @@
  *
  * CDDL HEADER END
  *
- * Copyright (c) 2016, Joyent, Inc. All rights reserved.
+ * Copyright 2017, Joyent, Inc. All rights reserved.
  *
  *
  * Unit tests for the firewall rule parser
@@ -361,17 +361,31 @@ test('port ranges', function (t) {
 });
 
 
-test('version mismatch', function (t) {
-    try {
-        parser.parse('FROM tag foo TO tag bar ALLOW TCP PORTS 20-30',
-            { maxVersion: 1 });
-        t.ok(false,
-            'Using port ranges is a newer feature and should fail in v1');
-    } catch (err) {
-        t.deepEqual(err.message,
-            'The rule uses a feature (port ranges) newer than this API allows',
-            'Correct error message for using ports in version 1');
-    }
+test('Parser option: maxVersion', function (t) {
+    var versionFmt = 'The rule uses a feature (%s) newer than this API allows';
+
+    [
+        // Version 2 features:
+        [ 'FROM tag foo TO tag bar ALLOW TCP PORTS 20-30', 1, 'port ranges' ],
+
+        // Version 3 features:
+        [ 'FROM tag a to ip fd00::1 ALLOW tcp PORT 80', 2, 'IPv6' ],
+        [ 'FROM tag a to subnet fd00::/64 ALLOW tcp PORT 80', 2, 'IPv6' ],
+        [ 'FROM tag a to tag b ALLOW icmp6 TYPE 135', 2, 'IPv6' ],
+        [ 'FROM tag a to tag b ALLOW icmp TYPE ALL', 2, 'all ICMP types' ]
+    ].forEach(function (cfg) {
+        var rule = cfg[0];
+        var v = cfg[1];
+
+        try {
+            parser.parse(cfg[0], { maxVersion: v });
+            t.fail(util.format('Should fail in v%d: %d', v, rule));
+        } catch (err) {
+            t.deepEqual(err.message, util.format(versionFmt, cfg[2]),
+                util.format('Correct error message when using v%d: ', v, rule));
+        }
+    });
+
     t.end();
 });
 

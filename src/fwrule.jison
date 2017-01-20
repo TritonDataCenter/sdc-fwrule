@@ -20,7 +20,7 @@
  *
  * CDDL HEADER END
  *
- * Copyright (c) 2016, Joyent, Inc. All rights reserved.
+ * Copyright 2017, Joyent, Inc. All rights reserved.
  *
  *
  * fwadm: firewall rule parser grammar
@@ -216,7 +216,8 @@ protocol
     | ICMP type_list
         { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
     | ICMP6 type_list
-        { $$ = { 'name': $1.toLowerCase(), 'targets': $2 } }
+        { yy.validateOKVersion(3, 'IPv6');
+          $$ = { 'name': $1.toLowerCase(), 'targets': $2 }; }
     ;
 
 
