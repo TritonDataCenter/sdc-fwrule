@@ -77,7 +77,7 @@ $(RAMSEY):
 #
 
 .PHONY: test
-test: $(ISTANBUL) $(FAUCET)
+test: $(ISTANBUL) $(FAUCET) parser
 	$(ISTANBUL) cover --print none test/run.js | $(FAUCET)
 
 .PHONY: check
