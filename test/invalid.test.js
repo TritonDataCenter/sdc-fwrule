@@ -313,22 +313,22 @@ var INVALID = [
     [ 'rule: bad ICMP type', {
         rule: 'FROM all vms TO ip 192.168.5.4 BLOCK ICMP TYPE 260'
         }, 'rule',
-        'ICMP type \"260\" is invalid'],
+        'ICMP type "260" is invalid'],
 
     [ 'rule: bad ICMP code', {
         rule: 'FROM all vms TO ip 192.168.5.4 BLOCK ICMP TYPE 8 CODE 270'
         }, 'rule',
-        'ICMP code \"270\" is invalid'],
+        'ICMP code "270" is invalid'],
 
     [ 'rule: bad ICMPv6 type', {
         rule: 'FROM all vms TO ip fd00::45 BLOCK ICMP6 TYPE 260'
         }, 'rule',
-        'ICMP type \"260\" is invalid'],
+        'ICMP type "260" is invalid'],
 
     [ 'rule: bad ICMPv6 code', {
         rule: 'FROM all vms TO ip fd00::45 BLOCK ICMP6 TYPE 128 CODE 270'
         }, 'rule',
-        'ICMP code \"270\" is invalid'],
+        'ICMP code "270" is invalid'],
 
     [ 'rule: max number of ICMPv6 types', {
         rule: 'FROM all vms TO ip fd00::45 BLOCK ICMP ' + nTypes(9)
