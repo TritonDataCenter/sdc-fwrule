@@ -20,7 +20,7 @@
  *
  * CDDL HEADER END
  *
- * Copyright (c) 2018, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2019, Joyent, Inc. All rights reserved.
  *
  *
  * Unit tests for the firewall rule object
@@ -85,6 +85,7 @@ function testTagInRules(t, unquotedOK, txtIn, txtOut, val) {
             created_by: 'fwadm',
             description: desc,
             enabled: true,
+            log: false,
             ports: [ 80 ],
             action: 'allow',
             priority: 0,
@@ -102,6 +103,7 @@ function testTagInRules(t, unquotedOK, txtIn, txtOut, val) {
             created_by: 'fwadm',
             description: desc,
             enabled: true,
+            log: false,
             global: true,
             rule: ruleOut,
             uuid: rule.uuid,
@@ -178,6 +180,7 @@ test('all target types', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -195,6 +198,7 @@ test('all target types', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: util.format('FROM (ip %s OR subnet %s OR tag "%s" OR vm %s) '
             + 'TO (ip %s OR subnet %s OR tag "%s" OR vm %s) ALLOW tcp PORT 80',
@@ -226,6 +230,7 @@ test('any', function (t) {
     var rule = fwrule.create({
         rule: ruleTxt,
         enabled: true,
+        log: true,
         version: fwrule.generateVersion()
     });
 
@@ -245,6 +250,7 @@ test('any', function (t) {
             wildcards: ['any']
         },
         enabled: true,
+        log: true,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -262,6 +268,7 @@ test('any', function (t) {
         enabled: true,
         global: true,
         rule: ruleTxt,
+        log: true,
         uuid: rule.uuid,
         version: rule.version
     }, 'rule.serialize()');
@@ -299,6 +306,7 @@ test('all vms', function (t) {
             wildcards: ['vmall']
         },
         enabled: true,
+        log: false,
         owner_uuid: owner,
         ports: [ 80 ],
         action: 'allow',
@@ -316,6 +324,7 @@ test('all vms', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         // no global flag set because the rule has an owner_uuid
         owner_uuid: owner,
         rule: ruleTxt,
@@ -337,6 +346,7 @@ test('tags', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [ '1.2.3.4' ],
             vms: [],
@@ -362,6 +372,7 @@ test('tags', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        log: false,
         rule: 'FROM ip 1.2.3.4 TO tag "some-tag" ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
@@ -383,6 +394,7 @@ test('tag "hasOwnProperty"', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [ '1.2.3.4' ],
             vms: [],
@@ -408,6 +420,7 @@ test('tag "hasOwnProperty"', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        log: false,
         rule: 'FROM ip 1.2.3.4 TO (tag "hasOwnProperty" OR tag "some-tag") '
             + 'ALLOW tcp PORT 80',
         uuid: rule.uuid,
@@ -441,6 +454,7 @@ test('multiple ports and owner_uuid', function (t) {
     var raw = {
         action: 'allow',
         enabled: inRule1.enabled,
+        log: false,
         from: {
             ips: [ '10.88.88.1' ],
             vms: [],
@@ -469,6 +483,7 @@ test('multiple ports and owner_uuid', function (t) {
 
     t.deepEqual(rule1.serialize(), {
         enabled: true,
+        log: false,
         owner_uuid: inRule1.owner_uuid,
         rule: inRule1.rule,
         uuid: rule1.uuid,
@@ -484,6 +499,7 @@ test('multiple ports and owner_uuid', function (t) {
 
     t.deepEqual(rule2.serialize(), {
         enabled: true,
+        log: false,
         owner_uuid: inRule2.owner_uuid,
         rule: inRule1.rule,
         uuid: rule2.uuid,
@@ -522,6 +538,7 @@ test('icmp', function (t) {
             wildcards: []
         },
         enabled: true,
+        log: false,
         types: [ '8' ],
         action: 'allow',
         priority: 0,
@@ -537,6 +554,7 @@ test('icmp', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -575,6 +593,7 @@ test('icmp with code', function (t) {
             wildcards: []
         },
         enabled: true,
+        log: false,
         types: [ '8:0' ],
         action: 'allow',
         priority: 0,
@@ -591,6 +610,7 @@ test('icmp with code', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
+        log: false,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -629,6 +649,7 @@ test('icmp: multiple types', function (t) {
             wildcards: []
         },
         enabled: true,
+        log: false,
         types: [ '8:0', '11:0', '30' ],
         action: 'allow',
         priority: 0,
@@ -648,6 +669,7 @@ test('icmp: multiple types', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
+        log: false,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -685,6 +707,7 @@ test('sorting: icmp codes', function (t) {
             wildcards: []
         },
         enabled: true,
+        log: false,
         types: [ '3:1', '3:5', '3:11', '8:0', '30', '40' ],
         action: 'allow',
         priority: 0,
@@ -700,6 +723,7 @@ test('sorting: icmp codes', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         global: true,
         rule: util.format(
         'FROM any TO vm %s ALLOW icmp '
@@ -741,6 +765,7 @@ test('sorting: icmp6 codes', function (t) {
             wildcards: []
         },
         enabled: true,
+        log: false,
         types: [ '3:1', '3:5', '3:11', '8:0', '30', '40' ],
         action: 'allow',
         priority: 0,
@@ -756,6 +781,7 @@ test('sorting: icmp6 codes', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         global: true,
         rule: util.format(
         'FROM any TO vm %s ALLOW icmp6 '
@@ -782,6 +808,7 @@ test('sorting: ports', function (t) {
     var raw = {
         action: 'allow',
         enabled: inRule.enabled,
+        log: false,
         from: {
             ips: [ '10.88.88.1' ],
             vms: [],
@@ -807,6 +834,7 @@ test('sorting: ports', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         global: true,
         rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + '(PORT 6 AND PORT 10 AND PORT 80 AND PORT 1002 AND PORT 1052 '
@@ -831,6 +859,7 @@ test('sorting: port ranges', function (t) {
     var raw = {
         action: 'allow',
         enabled: inRule.enabled,
+        log: false,
         from: {
             ips: [ '10.88.88.1' ],
             vms: [],
@@ -861,6 +890,7 @@ test('sorting: port ranges', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: true,
+        log: false,
         global: true,
         rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + 'PORTS 6 - 11, 10, 20 - 40, 80, 1002, 1052, 30245',
@@ -884,6 +914,7 @@ test('single port range', function (t) {
     var raw = {
         action: 'allow',
         enabled: inRule.enabled,
+        log: false,
         from: {
             ips: [ '10.88.88.1' ],
             vms: [],
@@ -910,6 +941,7 @@ test('single port range', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: true,
         global: true,
+        log: false,
         rule: 'FROM ip 10.88.88.1 TO tag "tag2" ALLOW tcp '
             + 'PORTS 50 - 50',
         uuid: rule.uuid,
@@ -936,6 +968,7 @@ test('port ALL', function (t) {
         var raw = {
             action: 'allow',
             enabled: inRule.enabled,
+            log: false,
             from: {
                 ips: [ '10.88.88.1' ],
                 vms: [],
@@ -963,6 +996,7 @@ test('port ALL', function (t) {
 
         t.deepEqual(rule.serialize(), {
             enabled: true,
+            log: false,
             global: true,
             rule: normalText,
             uuid: rule.uuid,
@@ -985,6 +1019,7 @@ test('tags: equal', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [ '1.2.3.4' ],
             vms: [],
@@ -1010,6 +1045,7 @@ test('tags: equal', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        log: false,
         rule: 'FROM ip 1.2.3.4 TO tag "some-tag" = "value" ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
@@ -1033,6 +1069,7 @@ test('multiple tags: equal', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [ '1.2.3.4' ],
             vms: [],
@@ -1061,6 +1098,7 @@ test('multiple tags: equal', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        log: false,
         rule: 'FROM ip 1.2.3.4 TO '
             + '(tag "some-tag" = "value" OR tag "some-tag" = "value2")'
             + ' ALLOW tcp PORT 80',
@@ -1086,6 +1124,7 @@ test('multiple tags: multiple values', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [],
             vms: [],
@@ -1114,6 +1153,7 @@ test('multiple tags: multiple values', function (t) {
     t.deepEqual(rule.serialize(), {
         enabled: false,
         global: true,
+        log: false,
         // 'some-tag = value0' is a subset of 'tag some-tag', so it is not
         // included in the rule text
         rule: 'FROM tag "some-tag" TO '
@@ -1146,6 +1186,7 @@ test('multiple tags: multiple quoted values', function (t) {
     var raw = {
         action: 'allow',
         enabled: false,
+        log: false,
         from: {
             ips: [],
             vms: [],
@@ -1177,6 +1218,7 @@ test('multiple tags: multiple quoted values', function (t) {
 
     t.deepEqual(rule.serialize(), {
         enabled: false,
+        log: false,
         owner_uuid: owner,
         rule: 'FROM (tag "김치" = "白김치" '
             + 'OR tag "김치" = "백김치") TO '
@@ -1231,6 +1273,7 @@ test('IPv6 sources', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -1248,6 +1291,7 @@ test('IPv6 sources', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -1296,6 +1340,7 @@ test('IPv6 subnet sources', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -1313,6 +1358,7 @@ test('IPv6 subnet sources', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -1361,6 +1407,7 @@ test('IPv6 destinations', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -1378,6 +1425,7 @@ test('IPv6 destinations', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -1426,6 +1474,7 @@ test('IPv6 subnet destinations', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'block',
         priority: 0,
@@ -1443,6 +1492,7 @@ test('IPv6 subnet destinations', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -1493,6 +1543,7 @@ test('Mixed IPv4 and IPv6', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -1510,6 +1561,7 @@ test('Mixed IPv4 and IPv6', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         global: true,
         rule: ruleTxt,
         uuid: rule.uuid,
@@ -1783,6 +1835,7 @@ test('Priority levels', function (t) {
             created_by: 'fwadm',
             description: desc,
             enabled: true,
+            log: false,
             action: 'allow',
             uuid: rule.uuid,
             version: rule.version
@@ -1802,6 +1855,7 @@ test('Priority levels', function (t) {
             description: desc,
             enabled: true,
             global: true,
+            log: false,
             rule: ruleTxt,
             uuid: rule.uuid,
             version: rule.version
@@ -1843,6 +1897,7 @@ test('Priority level 0 is implicit', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         ports: [ 80 ],
         action: 'allow',
         priority: 0,
@@ -1861,6 +1916,7 @@ test('Priority level 0 is implicit', function (t) {
         description: desc,
         enabled: true,
         global: true,
+        log: false,
         rule: 'FROM tag "a" TO tag "b" ALLOW tcp PORT 80',
         uuid: rule.uuid,
         version: rule.version
@@ -1901,6 +1957,7 @@ test('AH protocol', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         action: 'allow',
         priority: 0,
         protocol: 'ah',
@@ -1918,6 +1975,7 @@ test('AH protocol', function (t) {
         description: desc,
         enabled: true,
         global: true,
+        log: false,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version
@@ -1958,6 +2016,7 @@ test('ESP protocol', function (t) {
         created_by: 'fwadm',
         description: desc,
         enabled: true,
+        log: false,
         action: 'allow',
         priority: 0,
         protocol: 'esp',
@@ -1975,6 +2034,7 @@ test('ESP protocol', function (t) {
         description: desc,
         enabled: true,
         global: true,
+        log: false,
         rule: ruleTxt,
         uuid: rule.uuid,
         version: rule.version

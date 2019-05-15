@@ -20,7 +20,7 @@
  *
  * CDDL HEADER END
  *
- * Copyright (c) 2018, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2019, Joyent, Inc. All rights reserved.
  *
  *
  * Negative unit tests for the firewall rule object
@@ -404,6 +404,7 @@ test('Invalid parameters', function (t) {
     var thrown = false;
     var invalid = {
         enabled: 'invalid',
+        log: 'invalid',
         rule: 'invalid',
         owner_uuid: 'invalid',
         uuid: 'invalid'
@@ -416,7 +417,7 @@ test('Invalid parameters', function (t) {
 
         t.ok(err.hasOwnProperty('ase_errors'), 'multiple errors');
         if (err.hasOwnProperty('ase_errors')) {
-            t.equal(err.ase_errors.length, 4, '4 sub-errors');
+            t.equal(err.ase_errors.length, 5, '5 sub-errors');
             t.deepEqual(err.ase_errors.map(function (e) {
                 return [ e.field, e.message ];
             }), [
@@ -424,7 +425,8 @@ test('Invalid parameters', function (t) {
                     + 'expected: \'FROM\', found: word'],
                 ['uuid', 'Invalid rule UUID'],
                 ['owner_uuid', 'Invalid owner UUID'],
-                ['enabled', 'enabled must be true or false']
+                ['enabled', 'enabled must be true or false'],
+                ['log', 'log must be true or false']
             ], 'sub-errors');
         }
     }
